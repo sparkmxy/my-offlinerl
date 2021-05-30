@@ -26,7 +26,7 @@ policy_batch_size = 256
 data_collection_per_epoch = 50e3
 buffer_size = 1.2e6
 steps_per_epoch = 1000
-max_epoch = 200
+max_epoch = 100
 
 learnable_alpha = True
 uncertainty_mode = 'aleatoric'

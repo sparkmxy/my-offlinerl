@@ -140,9 +140,17 @@ class AlgoTrainer(BaseAlgo):
         model_batch_size = self.args['policy_batch_size']  - real_batch_size
         
         model_buffer = ModelBuffer(self.args['buffer_size'])
-
+        epoch_history = []
+        l = self.args['looking_back_factor']
+        print("looking back factor: ", l)
+        
         for epoch in range(self.args['max_epoch']):
             # collect data
+            pessimistic = True
+
+            n_epoch = len(epoch_history)    
+            if n_epoch >= 2*l and sum(epoch_history[n_epoch - l:n_epoch]) > sum(epoch_history[n_epoch - 2 * l:n_epoch - l]):
+                pessimistic = False
             with torch.no_grad():
                 obs = train_buffer.sample(int(self.args['data_collection_per_epoch']))['obs']
                 obs = torch.tensor(obs, device=self.device)
@@ -159,7 +167,11 @@ class AlgoTrainer(BaseAlgo):
                     diff = next_obses_mode - next_obs_mean
                     disagreement_uncertainty = torch.max(torch.norm(diff, dim=-1, keepdim=True), dim=0)[0]
                     aleatoric_uncertainty = torch.max(torch.norm(next_obs_dists.stddev, dim=-1, keepdim=True), dim=0)[0]
-                    uncertainty = disagreement_uncertainty if self.args['uncertainty_mode'] == 'disagreement' else aleatoric_uncertainty
+                    if pessimistic == True:
+                        uncertainty = torch.max(disagreement_uncertainty, aleatoric_uncertainty)
+                    else:
+                        uncertainty = torch.min(disagreement_uncertainty, aleatoric_uncertainty)
+                    # uncertainty = disagreement_uncertainty if self.args['uncertainty_mode'] == 'disagreement' else aleatoric_uncertainty
 
                     model_indexes = np.random.randint(0, next_obses.shape[0], size=(obs.shape[0]))
                     next_obs = next_obses[model_indexes, np.arange(obs.shape[0])]
@@ -199,6 +211,7 @@ class AlgoTrainer(BaseAlgo):
             res['aleatoric_uncertainty'] = aleatoric_uncertainty.mean().item()
             res['reward'] = reward.mean().item()
             self.log_res(epoch, res)
+            epoch_history.append(res['reward'])
 
         return self.get_policy()
 
