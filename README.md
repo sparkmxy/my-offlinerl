@@ -1,3 +1,9 @@
+**This repository is forked from [OfflineRL](https://github.com/polixir/OfflineRL) for a course assignment.**
+I merely made some optimizations to the MOPO algorithm, and only changed the file offlinerl/algo/modelbase/mopo.py on top of the original repository.
+
+**If you want to use it, I strongly recommand you work on the original repository.**
+
+---
 # OfflineRL 
 
 OfflineRL is a repository for Offline RL (batch reinforcement learning or offline reinforcement learning).
